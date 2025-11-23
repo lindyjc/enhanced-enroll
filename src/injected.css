@@ -1,0 +1,30 @@
+.madgrades-btn {
+    margin-left: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+#madgrades-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    border: 2px solid #333;
+    padding: 10px;
+    z-index: 9999;
+    display: none;
+    /* hidden initally */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#close-btn {
+    display: block;
+    margin-top: 8px;
+    cursor: pointer;
+}
+
+#madgrades-plot {
+    width: 600px;
+    height: 400px;
+}
