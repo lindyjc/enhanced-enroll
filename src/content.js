@@ -1,3 +1,7 @@
+// =================================================================
+// 🌟 FIXED content.js 🌟
+// =================================================================
+
 const plotlyScript = document.createElement('script');
 plotlyScript.src = chrome.runtime.getURL('node_modules/plotly.js-dist/plotly.js');
 (document.head || document.documentElement).appendChild(plotlyScript);
@@ -13,7 +17,8 @@ handlerScript.type = 'module';
 (document.head || document.documentElement).appendChild(handlerScript);
 
 const cseScript = document.createElement('script');
-cseScript.src = chrome.runtime.getURL('cseScraper.js'); // Ensure this matches the manifest path
+cseScript.src = chrome.runtime.getURL('cseScraper.js');
+// 🚨 Inject cseScraper.js immediately 
 (document.head || document.documentElement).appendChild(cseScript);
 
 let rendererScriptInjected = false;
@@ -44,10 +49,9 @@ function createPlot(data) {
     }
 }
 
+// MutationObserver for the Search page to find the "See sections" button
 const observer = new MutationObserver(() => {
-    // const buttons = document.querySelectorAll("button");
     const btn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("See sections"))
-    console.log("button?", btn)
     if (btn) {
         const existingPlotBtn = btn.nextElementSibling;
 
@@ -56,8 +60,7 @@ const observer = new MutationObserver(() => {
         }
 
     } else {
-        // If the button isn't here yet, we just wait for the next mutation
-        console.log("Mutation detected, but 'See sections' button still not present.");
+        // console.log("Mutation detected, but 'See sections' button still not present.");
     }
 })
 observer.observe(document.body, { childList: true, subtree: true })
@@ -81,13 +84,11 @@ const currentCourse = (seeSectionsBtn) => {
         return
     }
     console.log("trying to create button")
-    // Create button for displaying MadGrades plot in popup 
     const plotBtn = document.createElement("button")
     plotBtn.textContent = "Show MadGrades"
     plotBtn.className = "madgrades-btn"
     seeSectionsBtn.insertAdjacentElement("afterend", plotBtn)
 
-    // Create popup container 
     const popup = document.createElement("div")
     popup.id = "madgrades-popup"
 
@@ -98,36 +99,21 @@ const currentCourse = (seeSectionsBtn) => {
     avgGradesPlotDiv.id = "madgrades-plot"
     modalContent.appendChild(avgGradesPlotDiv)
 
-    // Button to close popup 
     const closeBtn = document.createElement("button")
     closeBtn.textContent = "Close"
     closeBtn.id = "close-btn"
-    modalContent.appendChild(closeBtn) // Append close button to wrapper
+    modalContent.appendChild(closeBtn)
 
-    popup.appendChild(modalContent); // Append wrapper to popup
-    document.body.appendChild(popup); // Append popup to body
+    popup.appendChild(modalContent);
+    document.body.appendChild(popup);
 
     plotBtn.addEventListener("click", () => {
         popup.style.display = "block"
 
-        // chrome.runtime.sendMessage(
-        //     { action: "handleSearch"},
-        //     function (response) {
-        //         if (response && response.status === "success") {
-        //             console.log("bg executed !")
-        //             console.log(response)
-        //             const course = response
-        //         }
-        //         else {
-        //             console.log("error executing bg")
-        //         }
-        //     }
-        // )
         const courseQuery = getCourseNameFromDOM();
         if (!courseQuery) {
             console.error("Could not find course name in the details pane.");
-            // Optionally, show a message in the popup saying "Error fetching course info"
-            return; // Stop execution if the course name is missing
+            return;
         }
         chrome.runtime.sendMessage(
             { action: "displayGraph", payload: courseQuery },
@@ -144,58 +130,14 @@ const currentCourse = (seeSectionsBtn) => {
         )
     });
 
-    // plotBtn.addEventListener("click", () => {
-    //     popup.style.display = "block"
-
-    //     chrome.runtime.sendMessage(
-    //         { action: "displayGraph", payload: "COMP SCI 564" },
-    //         function (response) {
-    //             if (response && response.status === "success") {
-    //                 console.log("bg executed !")
-    //                 console.log(response)
-    //                 createPlot(response.data);
-    //             }
-    //             else {
-    //                 console.log("error executing bg")
-    //             }
-    //         }
-    //     )
-    // });
-
     closeBtn.addEventListener("click", () => {
         popup.style.display = "none"
     })
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectStyles);
-} else {
-    injectStyles();
-}
-
 function mainContentExecution() {
-    const path = window.location.href.split("?")[0];
-
-    // Wait until the cs&e.js script is loaded before trying to call its functions.
-    // This is the simplest way to ensure the functions are on the window object.
-    cseScript.onload = () => {
-        switch (true) {
-            case path.endsWith("/scheduler"):
-                // 💡 Call the globally exposed function
-                if (window.handleScheduler) {
-                    window.handleScheduler();
-                }
-                break;
-            case path.endsWith("/search"):
-                // 💡 Call the globally exposed function
-                if (window.handleSectionsButton) {
-                    window.handleSectionsButton();
-                }
-                break;
-        }
-    };
-
-    // Ensure styles are injected after the page is loaded (keep existing injectStyles call)
+    // 🚨 We no longer need to call window.handleScheduler or window.handleSectionsButton
+    // because cseScraper.js is now self-executing.
     injectStyles();
 }
 
@@ -206,7 +148,6 @@ if (document.readyState === 'loading') {
 }
 
 function injectStyles() {
-    // Styling for injected elements
     const styleLink = document.createElement("link")
     styleLink.rel = "stylesheet"
     styleLink.href = chrome.runtime.getURL("injected.css")
