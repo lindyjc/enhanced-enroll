@@ -49,13 +49,6 @@ const observer = new MutationObserver(() => {
     const btn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("See sections"))
     console.log("button?", btn)
     if (btn) {
-        // console.log("See sections button found! Inserting plot button.");
-
-        // // Call the function that creates the plot button and popup
-        // currentCourse(btn);
-
-        // // Stop observing once the element is found 
-        // // observer.disconnect();
         const existingPlotBtn = btn.nextElementSibling;
 
         if (!existingPlotBtn || !existingPlotBtn.classList.contains('madgrades-btn')) {
@@ -68,6 +61,20 @@ const observer = new MutationObserver(() => {
     }
 })
 observer.observe(document.body, { childList: true, subtree: true })
+
+const getCourseNameFromDOM = () => {
+    const pane = document.querySelector('cse-pane#details');
+
+    if (!pane || pane.offsetParent === null) return null;
+
+    const toolbarSpans = pane.querySelectorAll('mat-toolbar span');
+
+    const courseNameSpan = Array.from(toolbarSpans)
+        .filter(span => span.innerText.trim() && !span.classList.length)
+        .pop();
+
+    return courseNameSpan ? courseNameSpan.innerText.trim() : null;
+}
 
 const currentCourse = (seeSectionsBtn) => {
     if (!seeSectionsBtn) {
@@ -102,9 +109,28 @@ const currentCourse = (seeSectionsBtn) => {
 
     plotBtn.addEventListener("click", () => {
         popup.style.display = "block"
-        console.log("clicked")
+
+        // chrome.runtime.sendMessage(
+        //     { action: "handleSearch"},
+        //     function (response) {
+        //         if (response && response.status === "success") {
+        //             console.log("bg executed !")
+        //             console.log(response)
+        //             const course = response
+        //         }
+        //         else {
+        //             console.log("error executing bg")
+        //         }
+        //     }
+        // )
+        const courseQuery = getCourseNameFromDOM();
+        if (!courseQuery) {
+            console.error("Could not find course name in the details pane.");
+            // Optionally, show a message in the popup saying "Error fetching course info"
+            return; // Stop execution if the course name is missing
+        }
         chrome.runtime.sendMessage(
-            { action: "displayGraph", payload: "COMP SCI 564" },
+            { action: "displayGraph", payload: courseQuery },
             function (response) {
                 if (response && response.status === "success") {
                     console.log("bg executed !")
@@ -117,6 +143,24 @@ const currentCourse = (seeSectionsBtn) => {
             }
         )
     });
+
+    // plotBtn.addEventListener("click", () => {
+    //     popup.style.display = "block"
+
+    //     chrome.runtime.sendMessage(
+    //         { action: "displayGraph", payload: "COMP SCI 564" },
+    //         function (response) {
+    //             if (response && response.status === "success") {
+    //                 console.log("bg executed !")
+    //                 console.log(response)
+    //                 createPlot(response.data);
+    //             }
+    //             else {
+    //                 console.log("error executing bg")
+    //             }
+    //         }
+    //     )
+    // });
 
     closeBtn.addEventListener("click", () => {
         popup.style.display = "none"
