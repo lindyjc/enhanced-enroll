@@ -1,15 +1,29 @@
 # madhacks-25
-(description tbd)
+## Inspiration
+We wanted to create a tool that puts everything students need right where they need it—making enrollment smoother, more intuitive, and more accessible for thousands of our peers. Not by replacing the existing system, but by enhancing it. 
 
-What are we working on? 
+## What it does
+- Integrates Rate My Professor and Madgrades data seamlessly into course search results. Students can view instructor ratings, grade distributions, and past difficulty without leaving the page.
+- Adds a real-time schedule compatibility checker: if a class section conflicts with a course already in your schedule, the extension automatically highlights it in red.
+- Everything stays within the enrollment page—no more switching tabs, copying course codes, or losing your place.
 
-What obstacles are we facing? 
+## How we built it
+- JavaScript, HTML, and CSS for the frontend 
+- Chrome Extension Manifest V3 for scripting, permissions, and content injection
+- Content scripts to dynamically insert new UI elements 
+- Dynamic ES module imports to load our data handlers 
+- APIs and scraping techniques to fetch data
+- DOM observation to detect loads or updates in webpage UI
 
-How do we pivot/handle it? 
+## Challenges we ran into
+- Cross-origin restrictions: Fetching data from sites like RMP and Madgrades within a content script caused CORS issues we had to work around through background script requests.
+- Injecting modules into a non-module page: Modern ES module imports don’t play nicely with older university web pages, so loading external scripts required careful design.
+- Dynamic page loading: The enrollment platform uses client-side rendering, so elements weren’t always in the DOM when we needed them—forcing us to use MutationObservers.
+- Time conflict logic: Accounting for all section types (lectures, discussions, labs) and edge cases was trickier than it looked.
+- UI integration: Making our injected elements look native while still being clearly useful took multiple iterations.
 
-How are we approaching different aspects? 
+## What's next for ENHANCED ENROLL
+- A mobile companion version or Safari/Firefox ports
+- Implement a search filter for dates/times of classes
 
-What do we want to achieve?
-
-A little blurb to summarize
 
