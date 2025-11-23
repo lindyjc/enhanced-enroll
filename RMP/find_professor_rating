@@ -2,7 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 
 def find_professor_rating(professor_name):
-    """Given the name of a proffessor this returns the RMP summary"""
+    """Given the name of a proffessor this returns the RMP summary
+    Args:
+        professor_name (str): Professor's name to search for
+        exact_match (bool): If True, requires exact name match. If False, allows partial matches.
+    Returns:
+        list: List of professor dictionaries"""
+
     url = f"https://www.ratemyprofessors.com/search/professors/18418?q={professor_name.replace(' ', '%20')}"
     
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -13,12 +19,25 @@ def find_professor_rating(professor_name):
         if name_element and name_element.text.strip().lower() == professor_name.lower():
             dept = card.select_one('.CardSchool__Department-sc-19lmz2k-0')
             rating = card.select_one('.CardNumRating__CardNumRatingNumber-sc-17t4b9u-2')
-            
             feedback_nums = card.select('.CardFeedback__CardFeedbackNumber-lq6nix-2')
             difficulty = feedback_nums[1].text if len(feedback_nums) > 1 else "N/A"
             
-            result = [4]
-            return f"{name_element.text.strip()} | {dept.text} | Rating: {rating.text}/5.0 | Difficulty: {difficulty}/5.0"
+            # Get the profile URL from the href attribute
+            profile_path = card.get('href')
+            if profile_path:
+                # Convert relative URL to absolute URL
+                profile_url = f"https://www.ratemyprofessors.com{profile_path}"
+            else:
+                profile_url = "N/A"
+
+            return {
+                    'name': name_element.text.strip(),
+                    'department': dept.text if dept else "N/A",
+                    'rating': rating.text if rating else "N/A",
+                    'difficulty': difficulty,
+                    'profile_url': profile_url
+                }
     
     return f"Professor '{professor_name}' not found at Madison"
 
+#print(find_professor_rating("Marc Renault"))
