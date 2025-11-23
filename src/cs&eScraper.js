@@ -31,6 +31,61 @@
     */
     let currentTeachers = [];
 
+
+    async function findProfessorRating(professorName) {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const targetUrl = `https://www.ratemyprofessors.com/search/professors/18418?q=${encodeURIComponent(professorName)}`;
+                
+                const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+                
+                if (response.ok) {
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    const cards = doc.querySelectorAll('a.TeacherCard__StyledTeacherCard-syjs0d-0');
+                    
+                    for (const card of cards) {
+                        const nameElement = card.querySelector('.CardName__StyledCardName-sc-1gyrgim-0');
+                        if (nameElement) {
+                            const foundName = nameElement.textContent.trim().replace(/\s+/g, ' ');
+                            const searchName = professorName.trim().replace(/\s+/g, ' ');
+                            
+                            if (foundName.toLowerCase() === searchName.toLowerCase()) {
+                                const dept = card.querySelector('.CardSchool__Department-sc-19lmz2k-0');
+                                const rating = card.querySelector('.CardNumRating__CardNumRatingNumber-sc-17t4b9u-2');
+                                const feedbackNums = card.querySelectorAll('.CardFeedback__CardFeedbackNumber-lq6nix-2');
+                                const difficulty = feedbackNums[1] ? feedbackNums[1].textContent : "N/A";
+                                
+                                const profilePath = card.getAttribute('href');
+                                const profileUrl = profilePath ? `https://www.ratemyprofessors.com${profilePath}` : "N/A";
+                                
+                                return {
+                                    name: foundName,
+                                    department: dept ? dept.textContent : "N/A",
+                                    rating: rating ? rating.textContent : "N/A",
+                                    difficulty: difficulty,
+                                    profileUrl: profileUrl
+                                };
+                            }
+                        }
+                    }
+                    
+                    return { error: `Professor '${professorName}' not found at Madison` };
+                }
+            } catch (error) {
+                console.log(`Attempt ${attempt} failed for ${professorName}:`, error.message);
+                if (attempt < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                }
+            }
+        }
+        
+        return { error: 'Failed to fetch professor data after retries' };
+    }
+
     /*
     Name: Time To Minutes
     Description:
@@ -455,31 +510,28 @@
                 element.style.fontWeight = 'bold';
             });
         });
-    } // end of conflictingsectionsred
+    } // end of conflictingSectionsRed
 
     /*
-    Name: Handle Sections Button
+    `Name: Handle Sections Button
     Description:
         This function tracks clicks on the "See sections" button and extracts
         instructor information from the sections panel that appears.
         It polls for the panel until found, then collects unique instructor names.
     */
-    function handleSectionsButton() {
+    async function handleSectionsButton() {
         let isProcessing = false;
         
-        document.addEventListener('click', (event) => {
-            // detect "see sections" button click
+        document.addEventListener('click', async (event) => {
             if (event.target.classList.contains('mdc-button__label') && 
                 event.target.innerText.trim() === 'See sections') {
                 
                 if (isProcessing) return;
                 isProcessing = true;
                 
-                // clear the global variable
                 currentTeachers = [];
                 
-                // start polling for the panel when button is clicked (every 50ms)
-                const checkForPanel = setInterval(() => {
+                const checkForPanel = setInterval(async () => {
                     const panel = document.querySelector('mat-sidenav[style*="visibility: visible"]');  
                     
                     if (panel) {
@@ -488,25 +540,93 @@
                         // find course conflicts and turn them red
                         handleScheduleConflicts(sections);
 
-                        // populate the global variable with new teachers
+                        // Process all professors
                         for(let k = 0; k < sections.length; ++k) {
-                            let teacher = sections[k].querySelector('.one-instructor');
-                            if (teacher) {
-                                currentTeachers.push(teacher.innerText.trim());
-                            } // end of if
-                        } // end of for
+                            let teacherElement = sections[k].querySelector('.one-instructor');
+                            if (teacherElement) {
+                                const teacherName = teacherElement.innerText.trim();
+                                currentTeachers.push(teacherName);
+                                
+                                // Call our new function directly
+                                try {
+                                    const professorData = await findProfessorRating(teacherName);
+                                    console.log(`RMP Data for ${teacherName}:`, professorData); // KEEP THIS LOG
+                                    
+                                    // Display the rating
+                                    displayProfessorRating(professorData, sections[k]);
+                                } catch (error) {
+                                    console.error(`Failed to fetch RMP data for ${teacherName}:`, error); // KEEP ERROR LOGS TOO
+                                }
+                            }
+                        }
 
-                        // stop polling when we have the data
                         clearInterval(checkForPanel);
                         isProcessing = false;
-                    } // end of if
+                    }
                 }, 50);
-            } // end of if
+            }
         });
+    }
+
+    function displayProfessorRating(professorData, sectionElement) {
+        // Remove existing rating if present
+        const existingRating = sectionElement.querySelector('.rmp-rating');
+        if (existingRating) {
+            existingRating.remove();
+        }
         
-        // return the global variable of teachers
-        return currentTeachers; 
-    } // end of handleSectionsButton
+        // Only display if we have valid rating data
+        if (professorData.rating && professorData.rating !== "N/A" && !professorData.error) {
+            const ratingElement = document.createElement('div');
+            ratingElement.className = 'rmp-rating';
+            
+            // Create colored rating based on score
+            const rating = parseFloat(professorData.rating);
+            let ratingColor = '#cc0000'; // red for low ratings
+            if (rating >= 4.0) ratingColor = '#00a000'; // green for high ratings
+            else if (rating >= 3.0) ratingColor = '#ff9900'; // orange for medium ratings
+            
+            const difficulty = parseFloat(professorData.difficulty);
+            let difficultyColor = '#00a000'; // green for easy
+            if (difficulty >= 4.0) difficultyColor = '#cc0000'; // red for hard
+            else if (difficulty >= 3.0) difficultyColor = '#ff9900'; // orange for medium
+            
+            // Create the rating display
+            ratingElement.innerHTML = `
+                <div style="margin: 4px 0; font-size: 12px; line-height: 1.3;">
+                    <span style="font-weight: bold;">RMP: </span>
+                    <span style="color: ${ratingColor}; font-weight: bold;">${professorData.rating}/5</span> | 
+                    <span style="font-weight: bold;">Difficulty: </span>
+                    <span style="color: ${difficultyColor}; font-weight: bold;">${professorData.difficulty}/5</span>
+                </div>
+            `;
+            
+            const instructorElement = sectionElement.querySelector('.one-instructor');
+            if (instructorElement) {
+                // Insert right after the professor name container
+                instructorElement.parentNode.insertBefore(ratingElement, instructorElement.nextSibling);
+            }
+            
+            // Optional: Also log to console when displaying (for debugging)
+            console.log(`Displayed RMP rating for ${professorData.name}: ${professorData.rating}/5, Difficulty: ${professorData.difficulty}/5`);
+        } else if (professorData.error) {
+            // Display "Not Found" message
+            const ratingElement = document.createElement('div');
+            ratingElement.className = 'rmp-rating';
+            ratingElement.innerHTML = `
+                <div style="margin: 4px 0; font-size: 11px; color: #666; font-style: italic;">
+                    RMP: Not found
+                </div>
+            `;
+            
+            const instructorElement = sectionElement.querySelector('.one-instructor');
+            if (instructorElement) {
+                instructorElement.parentNode.insertBefore(ratingElement, instructorElement.nextSibling);
+            }
+            
+            console.log(`No RMP data found for professor: ${professorData.error}`);
+        }
+    }
 
     /*
     Name: Handle Search
