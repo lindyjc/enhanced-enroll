@@ -88,7 +88,7 @@ function createPlot(data) {
         script.onload = () => {
             dispatchPlotEvent(data);
         };
-        script.onerror = (e) => console.error("Failed to load renderplot.js", e);
+        script.onerror = (e) => console.log("Failed to load renderplot.js", e);
     } else {
         dispatchPlotEvent(data);
     }
