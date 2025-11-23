@@ -1,0 +1,1 @@
+Plotly.newPlot('madgrades-plot', data, layout);
