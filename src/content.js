@@ -18,37 +18,34 @@ handlerScript.type = 'module';
 
 const cseScript = document.createElement('script');
 cseScript.src = chrome.runtime.getURL('cseScraper.js');
-// 🚨 Inject cseScraper.js immediately 
 (document.head || document.documentElement).appendChild(cseScript);
 
 let rendererScriptInjected = false;
 
-// Declare variables globally
-let popup;
-let closeBtn;
+// GLOBAL modal elements
+let popup = null;
+let closeBtn = null;
 
-// --- Function to create the persistent modal structure (new) ---
+// =================================================================
+//  Create popup ONCE only
+// =================================================================
 function createMadgradesPopup() {
-    // Check if the popup already exists in the DOM to prevent duplicates
-    if (document.getElementById('madgrades-popup')) {
-        popup = document.getElementById('madgrades-popup');
-        return;
-    }
+    if (popup) return; // don't recreate
 
     popup = document.createElement("div");
     popup.id = "madgrades-popup";
-    popup.style.display = "none"; // Ensure it starts hidden
+    popup.style.display = "none";
 
     const modalContent = document.createElement("div");
     modalContent.className = "madgrades-modal-content";
 
     const spinnerDiv = document.createElement("div");
     spinnerDiv.id = "madgrades-spinner";
-    modalContent.appendChild(spinnerDiv); // Add it to the modal content
+    modalContent.appendChild(spinnerDiv);
 
-    const avgGradesPlotDiv = document.createElement("div")
-    avgGradesPlotDiv.id = "madgrades-plot"
-    modalContent.appendChild(avgGradesPlotDiv)
+    const avgGradesPlotDiv = document.createElement("div");
+    avgGradesPlotDiv.id = "madgrades-plot";
+    modalContent.appendChild(avgGradesPlotDiv);
 
     closeBtn = document.createElement("button");
     closeBtn.textContent = "Close";
@@ -59,27 +56,26 @@ function createMadgradesPopup() {
     document.body.appendChild(popup);
 
     closeBtn.addEventListener("click", () => {
-        document.getElementById('madgrades-popup').classList.remove('visible');
+        popup.classList.remove('visible');
         popup.style.display = "none";
-        // Also ensure the graph is cleared when closed for the next render
-        if (window.Plotly && window.Plotly.purge) {
+
+        if (window.Plotly) {
             window.Plotly.purge('madgrades-plot');
         } else {
             document.getElementById('madgrades-plot').innerHTML = '';
         }
     });
 
-    console.log("MadGrades Popup structure created once.");
+    console.log("MadGrades popup created.");
 }
-// --- End of new function ---
 
+// =================================================================
+//  Helpers
+// =================================================================
 function dispatchPlotEvent(data) {
     const event = new CustomEvent('RenderMadgradesPlot', {
-        detail: {
-            plotData: JSON.stringify(data)
-        }
+        detail: { plotData: JSON.stringify(data) }
     });
-
     window.dispatchEvent(event);
 }
 
@@ -90,42 +86,14 @@ function createPlot(data) {
         (document.head || document.documentElement).appendChild(script);
         rendererScriptInjected = true;
 
-        script.onload = () => {
-            dispatchPlotEvent(data);
-        };
-        script.onerror = (e) => console.log("Failed to load renderplot.js", e);
+        script.onload = () => dispatchPlotEvent(data);
+        script.onerror = e => console.log("Failed to load render_plot.js", e);
     } else {
         dispatchPlotEvent(data);
     }
 }
 
-// MutationObserver for the Search page to find the "See sections" button
-const observer = new MutationObserver(() => {
-    const btn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("See sections"))
-    if (btn) {
-        const existingPlotBtn = btn.nextElementSibling;
-
-        if (!existingPlotBtn || !existingPlotBtn.classList.contains('madgrades-btn')) {
-            currentCourse(btn);
-        }
-
-    } else {
-        // console.log("Mutation detected, but 'See sections' button still not present.");
-    }
-})
-observer.observe(document.body, { childList: true, subtree: true })
-
-function injectStyles() {
-    // Styling for injected elements
-    const styleLink = document.createElement("link")
-    styleLink.rel = "stylesheet"
-    styleLink.href = chrome.runtime.getURL("injected.css")
-    document.head.appendChild(styleLink)
-    createMadgradesPopup();
-    console.log("Styling applied!")
-}
-
-const getCourseNameFromDOM = () => {
+function getCourseNameFromDOM() {
     const pane = document.querySelector('cse-pane#details');
 
     if (!pane || pane.offsetParent === null) return null;
@@ -139,101 +107,187 @@ const getCourseNameFromDOM = () => {
     return courseNameSpan ? courseNameSpan.innerText.trim() : null;
 }
 
-const currentCourse = (seeSectionsBtn) => {
-    if (!seeSectionsBtn) {
-        return
+// =================================================================
+//  RMP MESSAGING SYSTEM
+// =================================================================
+
+// Listen for RMP requests from page context (cseScraper.js)
+window.addEventListener('message', function(event) {
+    // Only accept messages from the same frame and of the correct type
+    if (event.source !== window) return;
+    
+    if (event.data.type && event.data.type === 'FETCH_RMP_DATA') {
+        const { professorName, sectionGroupId } = event.data;
+        
+        console.log("Content script: Forwarding RMP request for:", professorName);
+        
+        // Forward to background script
+        chrome.runtime.sendMessage(
+            { action: "findRMP", professorName: professorName },
+            (professorData) => {
+                // Send response back to page context
+                window.postMessage({
+                    type: 'RMP_DATA_RESPONSE',
+                    professorData: professorData,
+                    sectionGroupId: sectionGroupId,
+                    professorName: professorName
+                }, '*');
+            }
+        );
+    }
+});
+
+// Listen for RMP responses to update the UI
+window.addEventListener('message', function(event) {
+    if (event.source !== window) return;
+    
+    if (event.data.type && event.data.type === 'RMP_DATA_RESPONSE') {
+        const { professorData, professorName } = event.data;
+        
+        console.log("Content script: Received RMP data for:", professorName);
+        
+        // Find the section group by instructor name and update it
+        const instructorElements = document.querySelectorAll('.one-instructor');
+        instructorElements.forEach(instructorElement => {
+            if (instructorElement.innerText.trim() === professorName) {
+                const sectionGroup = instructorElement.closest('cse-pack-header');
+                if (sectionGroup) {
+                    if (professorData && professorData.status === "success") {
+                        displayProfessorRating(professorData.data, sectionGroup);
+                    } else {
+                        console.error(`Failed to fetch RMP data for ${professorName}:`, professorData?.error);
+                        displayProfessorRating({ error: `Failed to fetch for ${professorName}` }, sectionGroup);
+                    }
+                }
+            }
+        });
+    }
+});
+
+// display RMP
+function displayProfessorRating(professorData, sectionElement) {
+    const existingRating = sectionElement.querySelector('.rmp-rating');
+    if (existingRating) {
+        existingRating.remove();
     }
 
-    // We rely on 'popup' being a global variable created by createMadgradesPopup()
-    if (!popup) {
-        console.error("Popup not initialized. Re-running startup logic.");
-        createMadgradesPopup();
+    const ratingElement = document.createElement('div');
+    ratingElement.className = 'rmp-rating';
+
+    if (professorData.isPlaceholder) {
+        // Create clickable RMP search link
+        ratingElement.innerHTML = `
+            <div style="margin: 4px 0; font-size: 12px; line-height: 1.3;">
+                <a href="${professorData.searchUrl}" target="_blank" style="color: #C5050C; text-decoration: underline; font-weight: bold;">
+                    🔍 Search RateMyProfessors
+                </a>
+            </div>
+        `;
+    } else if (professorData.rating && professorData.rating !== "N/A" && !professorData.error) {
+        // Normal rating display
+        const rating = parseFloat(professorData.rating);
+        let ratingColor = '#cc0000';
+        if (rating >= 4.0) ratingColor = '#00a000';
+        else if (rating >= 3.0) ratingColor = '#ff9900';
+
+        const difficulty = parseFloat(professorData.difficulty);
+        let difficultyColor = '#00a000';
+        if (difficulty >= 4.0) difficultyColor = '#cc0000';
+        else if (difficulty >= 3.0) difficultyColor = '#ff9900';
+
+        ratingElement.innerHTML = `
+            <div style="margin: 4px 0; font-size: 12px; line-height: 1.3;">
+                <span style="font-weight: bold;">RMP: </span>
+                <span style="color: ${ratingColor}; font-weight: bold;">${professorData.rating}/5</span> | 
+                <span style="font-weight: bold;">Difficulty: </span>
+                <span style="color: ${difficultyColor}; font-weight: bold;">${professorData.difficulty}/5</span>
+            </div>
+        `;
+    } else if (professorData.error) {
+        ratingElement.innerHTML = `
+            <div style="margin: 4px 0; font-size: 11px; color: #666; font-style: italic;">
+                RMP: Not found
+            </div>
+        `;
     }
 
-    console.log("trying to create button")
-    const plotBtn = document.createElement("button")
-    plotBtn.textContent = "Show MadGrades"
-    plotBtn.className = "madgrades-btn"
-    seeSectionsBtn.insertAdjacentElement("afterend", plotBtn)
+    const instructorElement = sectionElement.querySelector('.one-instructor');
+    if (instructorElement) {
+        instructorElement.parentNode.insertBefore(ratingElement, instructorElement.nextSibling);
+    }
+}
 
+// =================================================================
+//  Main logic: add the "Show MadGrades" button
+// =================================================================
+function currentCourse(seeSectionsBtn) {
+    if (!seeSectionsBtn) return;
 
-    const popup = document.createElement("div")
-    popup.id = "madgrades-popup"
+    if (!popup) createMadgradesPopup();
 
-    const modalContent = document.createElement("div");
-    modalContent.className = "madgrades-modal-content";
+    console.log("Trying to create MadGrades button...");
 
-    const avgGradesPlotDiv = document.createElement("div")
-    avgGradesPlotDiv.id = "madgrades-plot"
-    modalContent.appendChild(avgGradesPlotDiv)
+    // Prevent duplicate button
+    const existingBtn = seeSectionsBtn.nextElementSibling;
+    if (existingBtn && existingBtn.classList.contains("madgrades-btn")) {
+        return;
+    }
 
-    const closeBtn = document.createElement("button")
-    closeBtn.textContent = "Close"
-    closeBtn.id = "close-btn"
-    modalContent.appendChild(closeBtn)
-
-    popup.appendChild(modalContent);
-    document.body.appendChild(popup);
-
+    const plotBtn = document.createElement("button");
+    plotBtn.textContent = "Show MadGrades";
+    plotBtn.className = "madgrades-btn";
+    seeSectionsBtn.insertAdjacentElement("afterend", plotBtn);
 
     plotBtn.addEventListener("click", () => {
-        const popup = document.getElementById('madgrades-popup');
-        popup.classList.add('visible');
-        popup.style.display = "block" // Show the one, persistent popup
-        popup.classList.add('loading'); // for buffer
+        popup.style.display = "block";
+        popup.classList.add("visible", "loading");
 
         const courseQuery = getCourseNameFromDOM();
         if (!courseQuery) {
-            console.error("Could not find course name in the details pane.");
+            console.error("No course name found.");
+            popup.classList.remove('loading');
             return;
         }
+
         chrome.runtime.sendMessage(
             { action: "displayGraph", payload: courseQuery },
-            function (response) {
+            response => {
                 popup.classList.remove('loading');
-                if (response && response.status === "success") {
-                    console.log("bg executed !")
+                if (response?.status === "success") {
                     createPlot(response.data);
-                }
-                else {
-                    console.log("error executing bg")
+                } else {
+                    console.log("Error executing background script.");
                 }
             }
-        )
+        );
     });
-
-
-    closeBtn.addEventListener("click", () => {
-        popup.style.display = "none"
-    })
-
 }
-// plotBtn.addEventListener("click", () => {
-//     popup.style.display = "block"
 
-//     chrome.runtime.sendMessage(
-//         { action: "displayGraph", payload: "COMP SCI 564" },
-//         function (response) {
-//             if (response && response.status === "success") {
-//                 console.log("bg executed !")
-//                 console.log(response)
-//                 createPlot(response.data);
-//             }
-//             else {
-//                 console.log("error executing bg")
-//             }
-//         }
-//     )
-// });
+// =================================================================
+// MutationObserver – watches for “See sections” button
+// =================================================================
+const observer = new MutationObserver(() => {
+    const btn = [...document.querySelectorAll("button")]
+        .find(b => b.textContent.includes("See sections"));
 
-// closeBtn.addEventListener("click", () => {
-//     popup.style.display = "none"
-// })
+    if (btn) currentCourse(btn);
+});
+observer.observe(document.body, { childList: true, subtree: true });
 
+// =================================================================
+// Inject styles & start system
+// =================================================================
+function injectStyles() {
+    const styleLink = document.createElement("link");
+    styleLink.rel = "stylesheet";
+    styleLink.href = chrome.runtime.getURL("injected.css");
+    document.head.appendChild(styleLink);
+
+    console.log("Styles injected.");
+    createMadgradesPopup();
+}
 
 function mainContentExecution() {
-    // 🚨 We no longer need to call window.handleScheduler or window.handleSectionsButton
-    // because cseScraper.js is now self-executing.
     injectStyles();
 }
 
@@ -241,12 +295,4 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', mainContentExecution);
 } else {
     mainContentExecution();
-}
-
-function injectStyles() {
-    const styleLink = document.createElement("link")
-    styleLink.rel = "stylesheet"
-    styleLink.href = chrome.runtime.getURL("injected.css")
-    document.head.appendChild(styleLink)
-    console.log("Styling applied!")
 }

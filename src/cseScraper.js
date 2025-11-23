@@ -408,7 +408,7 @@
     /*
     Name: handleSearchObserver
     Description: Sets up a MutationObserver to constantly check the DOM for the appearance
-                 of the course sections panel, and triggers conflict/RMP checks when it opens.
+                of the course sections panel, and triggers conflict/RMP checks when it opens.
     */
     function handleSearchObserver() {
         console.log("HANDLE SEARCH: Setting up continuous MutationObserver to detect section panel opening.");
@@ -457,12 +457,11 @@
                             if (teacherElement) {
                                 const teacherName = teacherElement.innerText.trim();
 
-                                // Use message passing to background script for RMP data
                                 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                                    // We're in a content script context - use chrome.runtime.sendMessage
                                     chrome.runtime.sendMessage(
                                         { action: "findRMP", professorName: teacherName },
                                         (professorData) => {
-                                            // This runs asynchronously after the data returns
                                             if (professorData && professorData.status === "success") {
                                                 displayProfessorRating(professorData.data, sectionGroup);
                                             } else {
@@ -472,7 +471,13 @@
                                         }
                                     );
                                 } else {
-                                    console.warn("RMP feature skipped: chrome.runtime.sendMessage is unavailable.");
+                                    // We're in page context - use window.postMessage to communicate with content script
+                                    console.log("RMP: Using window.postMessage for professor:", teacherName);
+                                    window.postMessage({
+                                        type: 'FETCH_RMP_DATA',
+                                        professorName: teacherName,
+                                        sectionGroupId: generateUniqueId() // Need a way to identify the section
+                                    }, '*');
                                 }
                             }
                         }
@@ -494,6 +499,10 @@
         startObserver(); // Initial start
     }
 
+    /// helper function
+    function generateUniqueId() {
+        return Math.random().toString(36).substr(2, 9);
+    }
 
     // =============================
     // --- PATH MONITOR (NEW) ---
