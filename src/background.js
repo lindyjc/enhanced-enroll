@@ -129,57 +129,6 @@ export async function getAvgGPA(url) {
 }
 
 
-// export async function displayGraph(course) {
-
-//     const r = 0;
-//     const g = 0;
-//     const b = 0;
-//     const color = 'rgb(' + r + ',' + g + ',' + b + ')';
-//     const colorTemplate = `rgb(${r},${g},${b})`;
-//     // const abbrev = "COMP SCI" // get these from somewhere in the future
-//     // const number = "577"
-//     const courseurl = await getCourseUrl(course)
-//     const grade_counts = await getGradeCounts(courseurl)
-//     const grade_per = await getGradePercents(courseurl)
-//     const avgGPA = await getAvgGPA(courseurl)
-//     const letter_grades = ['A', 'AB', 'B', 'BC', 'C', 'D', 'F']
-//     const x_lab = 'Cumulative: ' + avgGPA
-//     var layout = {
-//         xaxis: {
-//             title: {
-//                 text: x_lab,
-//                 font: {
-//                     family: 'Courier New, monospace',
-//                     size: 15,
-//                     color: color
-//                 }
-//             },
-//         },
-//         yaxis: {
-//             title: { text: "Students (%)", },
-//             range: [0, 100]
-//         }
-//     }
-
-//     var trace1 = {
-//         x: letter_grades,
-//         y: grade_per,
-//         type: 'bar',
-//         marker: {
-//             color: color
-//         },
-//         // hoverinfo: 'none',
-//         text: grade_per.map(String),
-//         hovertemplate: '%{customdata}<extra></extra>',
-//         customdata: grade_counts.map((count, i) =>
-//             `${count} students`
-//         )
-//     }
-//     var data = [trace1]
-
-//     Plotly.newPlot('madgrades-plot', data, layout);
-// }
-
 export async function getPlotData(course) {
     // Assume you combine your data fetching functions here
     const courseurl = await getCourseUrl(course);
@@ -205,14 +154,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Ensure the background script always runs 
 chrome.runtime.onStartup.addListener(startUp)
 chrome.runtime.onInstalled.addListener(startUp)
-
-// chrome.tabs.onUpdated.addListener((tabId, tab) => {
-//     if (tab.url && tab.url.includes("enroll.wisc.edu/search")) {
-//         // Populate Madgrades
-//     }
-//     if (tab.url && tab.url.includes("enroll.wisc.edu/scheduler")) {
-//         // Get schedule info 
-//     }
-// })
-
-

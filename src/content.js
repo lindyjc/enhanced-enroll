@@ -45,13 +45,18 @@ const observer = new MutationObserver(() => {
     const btn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("See sections"))
     console.log("button?", btn)
     if (btn) {
-        console.log("See sections button found! Inserting plot button.");
+        // console.log("See sections button found! Inserting plot button.");
 
-        // Call the function that creates the plot button and popup
-        currentCourse(btn);
+        // // Call the function that creates the plot button and popup
+        // currentCourse(btn);
 
-        // Stop observing once the element is found 
-        observer.disconnect();
+        // // Stop observing once the element is found 
+        // // observer.disconnect();
+        const existingPlotBtn = btn.nextElementSibling;
+
+        if (!existingPlotBtn || !existingPlotBtn.classList.contains('madgrades-btn')) {
+            currentCourse(btn);
+        }
 
     } else {
         // If the button isn't here yet, we just wait for the next mutation
@@ -67,7 +72,7 @@ const currentCourse = (seeSectionsBtn) => {
     console.log("trying to create button")
     // Create button for displaying MadGrades plot in popup 
     const plotBtn = document.createElement("button")
-    plotBtn.textContent = "Show MadGrades Plot"
+    plotBtn.textContent = "Show MadGrades"
     plotBtn.className = "madgrades-btn"
     seeSectionsBtn.insertAdjacentElement("afterend", plotBtn)
 

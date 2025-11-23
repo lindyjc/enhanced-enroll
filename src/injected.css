@@ -40,7 +40,7 @@
     margin-top: 10px;
     padding: 8px 15px;
     cursor: pointer;
-    background-color: #f44336;
+    background-color: #C5050C;
     color: white;
     border: none;
     border-radius: 4px;
@@ -50,11 +50,8 @@
     background-color: #d32f2f;
 }
 
-/* --- Your Custom Button Styling --- */
-
 .madgrades-btn {
-    /* Make your button match the UW theme or stand out slightly */
-    background-color: #C5050C; /* UW-Madison Red */
+    background-color: #C5050C; 
     color: white;
     border: none;
     padding: 8px 12px;
