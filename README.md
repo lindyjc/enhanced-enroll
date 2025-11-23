@@ -1,15 +1,8 @@
 # madhacks-25
 (description tbd)
 
-What are we working on? 
+We built an extension that integrates the functionality of Madgrades, RateMyProfessor and our in house Schedule Conflict Identifier, which highlights classes which cannot be take with the currently selected schedule.
 
-What obstacles are we facing? 
 
-How do we pivot/handle it? 
 
-How are we approaching different aspects? 
-
-What do we want to achieve?
-
-A little blurb to summarize
 
