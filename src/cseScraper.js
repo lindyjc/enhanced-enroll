@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict'
 
     /*
@@ -37,31 +37,31 @@
             try {
                 const proxyUrl = 'https://api.allorigins.win/raw?url=';
                 const targetUrl = `https://www.ratemyprofessors.com/search/professors/18418?q=${encodeURIComponent(professorName)}`;
-                
+
                 const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
-                
+
                 if (response.ok) {
                     const html = await response.text();
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    
+
                     const cards = doc.querySelectorAll('a.TeacherCard__StyledTeacherCard-syjs0d-0');
-                    
+
                     for (const card of cards) {
                         const nameElement = card.querySelector('.CardName__StyledCardName-sc-1gyrgim-0');
                         if (nameElement) {
                             const foundName = nameElement.textContent.trim().replace(/\s+/g, ' ');
                             const searchName = professorName.trim().replace(/\s+/g, ' ');
-                            
+
                             if (foundName.toLowerCase() === searchName.toLowerCase()) {
                                 const dept = card.querySelector('.CardSchool__Department-sc-19lmz2k-0');
                                 const rating = card.querySelector('.CardNumRating__CardNumRatingNumber-sc-17t4b9u-2');
                                 const feedbackNums = card.querySelectorAll('.CardFeedback__CardFeedbackNumber-lq6nix-2');
                                 const difficulty = feedbackNums[1] ? feedbackNums[1].textContent : "N/A";
-                                
+
                                 const profilePath = card.getAttribute('href');
                                 const profileUrl = profilePath ? `https://www.ratemyprofessors.com${profilePath}` : "N/A";
-                                
+
                                 return {
                                     name: foundName,
                                     department: dept ? dept.textContent : "N/A",
@@ -72,7 +72,7 @@
                             }
                         }
                     }
-                    
+
                     return { error: `Professor '${professorName}' not found at Madison` };
                 }
             } catch (error) {
@@ -82,7 +82,7 @@
                 }
             }
         }
-        
+
         return { error: 'Failed to fetch professor data after retries' };
     }
 
@@ -127,14 +127,14 @@
         // convert all start/end times to minutes for each day in daytimes
         // stored in a new object 'times' keyed by day letter
         for (const day in dayTimes) {
-            const {startTime, endTime} = dayTimes[day];
+            const { startTime, endTime } = dayTimes[day];
             times[day] = {
                 startMinutes: timeToMinutes(startTime),
                 endMinutes: timeToMinutes(endTime)
             };
         } // end of for
 
-        const course = {code, title, times};
+        const course = { code, title, times };
         return course;
     } // end of createcourse
 
@@ -159,14 +159,14 @@
         // convert all start/end times to minutes for each day in daytimes
         // stored in a new object 'times' keyed by day letter
         for (const day in dayTimes) {
-            const {startTime, endTime} = dayTimes[day];
+            const { startTime, endTime } = dayTimes[day];
             times[day] = {
                 startMinutes: timeToMinutes(startTime),
                 endMinutes: timeToMinutes(endTime)
             };
         } // end of for
 
-        const course = {code, title, times};
+        const course = { code, title, times };
 
         // remove this course from all days in the schedule if it exists
         // prevents duplicate entries across days
@@ -208,7 +208,7 @@
 
         for (const char of daysStr) {
             if (validDays.includes(char)) {
-                result[char] = {startTime, endTime};
+                result[char] = { startTime, endTime };
             } // end of if
         } // end of for
 
@@ -224,7 +224,7 @@
     */
     function printSchedule() {
         console.log("=== WEEKLY SCHEDULE ===");
-        
+
         // iterate over each day in the schedule
         for (const day in schedule) {
             console.log(`\n${day}:`);
@@ -243,7 +243,7 @@
                 } // end of if
             }); // end of foreach
         } // end of for
-        
+
         console.log("\n=== END SCHEDULE ===");
     } // end of printschedule
 
@@ -276,10 +276,10 @@
         // wait for courses to be loaded in the dom (500ms)
         const waitForCourses = setInterval(() => {
             const courseItems = document.querySelectorAll('cse-course-list-item');
-            
+
             if (courseItems.length > 0) {
                 clearInterval(waitForCourses);
-                
+
                 // process each course item
                 for (let i = 0; i < courseItems.length; i++) {
                     const courseItem = courseItems[i];
@@ -290,7 +290,7 @@
                     if (!isChecked) {
                         continue;
                     } // end of if
-                    
+
 
                     // per class find the course code, title, day(s), start and end time(s)
                     const courseCodeDiv = courseItem.querySelector('div.left.grow.catalog');
@@ -329,7 +329,7 @@
             } // end of if
         }, 500);
     } // end of handlescheduler
-    
+
     /*
     Name: Handle Schedule Conflicts
     Description:
@@ -343,29 +343,29 @@
         // track sections with conflicts
         const seenSections = new Set();
         const conflictingSections = new Set();
-        
-        for(let i = 0; i < sections.length; ++i) {
+
+        for (let i = 0; i < sections.length; ++i) {
             const section = sections[i];
-            
+
             // process all sections within this main section (both lectures and discussions)
             const allSectionHeaders = section.querySelectorAll('cse-pack-header');
-            
+
             // process each section header
-            for(let n = 0; n < allSectionHeaders.length; n++) {
+            for (let n = 0; n < allSectionHeaders.length; n++) {
                 const hasConflict = processSection(allSectionHeaders[n], sectionCourses, seenSections);
                 if (hasConflict) {
                     conflictingSections.add(allSectionHeaders[n]);
                 } // end of if
             } // end of for
         } // end of outer for
-        
+
         // change conflicting sections so they're red
         conflictingSectionsRed(conflictingSections);
-        
-        for(let k = 0; k < sectionCourses.length; ++k) {
+
+        for (let k = 0; k < sectionCourses.length; ++k) {
             const course = sectionCourses[k];
         } // end of for
-        
+
         return sectionCourses;
     } // end of handlescheduleconflicts
 
@@ -385,78 +385,78 @@
         // get course info from the section - extract just the section code
         const sectionCodeElement = section.querySelector('.cell.catalog-ref');
         let sectionCode = sectionCodeElement ? sectionCodeElement.innerText.trim() : 'Unknown Section';
-        
+
         // clean up the section code - remove "section is saved" and get just the code
         if (sectionCode.includes('Section is saved')) {
             const lines = sectionCode.split('\n');
             sectionCode = lines[lines.length - 1].trim();
         } // end of if
-        
+
         // skip if we can't determine the section type
         if (!sectionCode.startsWith('LEC') && !sectionCode.startsWith('DIS')) {
             return false;
         } // end of if
-        
+
         // create a unique identifier for this entire section
         const sectionUniqueId = sectionCode;
-        
+
         // only process this section if we haven't seen it before
         if (seenSections.has(sectionUniqueId)) {
             return false;
         }
         seenSections.add(sectionUniqueId);
-        
+
         // get all time elements for this section
         const allTimeElements = section.querySelectorAll(".days-times");
-        
+
         // use a set to track unique meeting times within this section
         const seenMeetingTimes = new Set();
         const dayTimes = {};
-        
+
         // check all the days and times - but only add unique meeting times
-        for(let j = 0; j < allTimeElements.length; ++j) {
+        for (let j = 0; j < allTimeElements.length; ++j) {
             const timeElement = allTimeElements[j];
             const fullText = timeElement.innerText.trim();
-            
+
             // split the days from the times (ex: "mwf 9:55 am - 10:45 am")
             const firstSpaceIndex = fullText.indexOf(" ");
             if (firstSpaceIndex === -1) continue;
-            
+
             const daysStr = fullText.substring(0, firstSpaceIndex);
             const timesStr = fullText.substring(firstSpaceIndex + 1);
-            
+
             // clean the times string - remove location info if present
             const cleanTimesStr = timesStr.split('\n\n')[0];
-            
+
             // split start and end times using " - " (with spaces)
             const [startTime, endTime] = cleanTimesStr.split(" - ").map(t => t.trim());
-            
+
             // create a unique identifier for this specific meeting time
             const meetingTimeId = `${daysStr}-${startTime}-${endTime}`;
-            
+
             // only process this meeting time if we haven't seen it before in this section
             if (seenMeetingTimes.has(meetingTimeId)) continue;
             seenMeetingTimes.add(meetingTimeId);
-            
+
             // expand the days and associate with times
             const expanded = expandDayTimes(daysStr, startTime, endTime);
-            
+
             // merge into the section's daytimes
             Object.assign(dayTimes, expanded);
         } // end of inner for
-        
+
         // only create a course object if we found valid times
         if (Object.keys(dayTimes).length > 0) {
             // create a course object for this section with all its unique meeting times
             const sectionTitle = `${sectionCode}`;
             const sectionCourse = createCourse(sectionCode, sectionTitle, dayTimes);
             sectionCourses.push(sectionCourse);
-            
+
             // check for scheduling conflicts with existing courses
             const hasConflict = checkForConflicts(sectionCourse);
             return hasConflict;
         } // end of if
-        
+
         return false;
     } // end of processsection
 
@@ -472,19 +472,19 @@
     */
     function checkForConflicts(newCourse) {
         let hasConflict = false;
-        
+
         // check against all existing courses in the schedule
         for (const day in newCourse.times) {
             const newTime = newCourse.times[day];
-            
+
             // check all courses already scheduled on this day
             for (const existingCourse of schedule[day]) {
                 const existingTime = existingCourse.times[day];
-                
+
                 // check if times overlap
-                if (newTime.startMinutes <= existingTime.endMinutes && 
+                if (newTime.startMinutes <= existingTime.endMinutes &&
                     existingTime.startMinutes <= newTime.endMinutes) {
-                    
+
                     // found a conflict
                     hasConflict = true;
                 } // end of if 
@@ -521,37 +521,37 @@
     */
     async function handleSectionsButton() {
         let isProcessing = false;
-        
+
         document.addEventListener('click', async (event) => {
-            if (event.target.classList.contains('mdc-button__label') && 
+            if (event.target.classList.contains('mdc-button__label') &&
                 event.target.innerText.trim() === 'See sections') {
-                
+
                 if (isProcessing) return;
                 isProcessing = true;
-                
+
                 currentTeachers = [];
-                
+
                 const checkForPanel = setInterval(async () => {
-                    const panel = document.querySelector('mat-sidenav[style*="visibility: visible"]');  
-                    
+                    const panel = document.querySelector('mat-sidenav[style*="visibility: visible"]');
+
                     if (panel) {
                         const sections = panel.querySelectorAll('cse-package-group');
-                        
+
                         // find course conflicts and turn them red
                         handleScheduleConflicts(sections);
 
                         // Process all professors
-                        for(let k = 0; k < sections.length; ++k) {
+                        for (let k = 0; k < sections.length; ++k) {
                             let teacherElement = sections[k].querySelector('.one-instructor');
                             if (teacherElement) {
                                 const teacherName = teacherElement.innerText.trim();
                                 currentTeachers.push(teacherName);
-                                
+
                                 // Call our new function directly
                                 try {
                                     const professorData = await findProfessorRating(teacherName);
                                     console.log(`RMP Data for ${teacherName}:`, professorData); // KEEP THIS LOG
-                                    
+
                                     // Display the rating
                                     displayProfessorRating(professorData, sections[k]);
                                 } catch (error) {
@@ -574,23 +574,23 @@
         if (existingRating) {
             existingRating.remove();
         }
-        
+
         // Only display if we have valid rating data
         if (professorData.rating && professorData.rating !== "N/A" && !professorData.error) {
             const ratingElement = document.createElement('div');
             ratingElement.className = 'rmp-rating';
-            
+
             // Create colored rating based on score
             const rating = parseFloat(professorData.rating);
             let ratingColor = '#cc0000'; // red for low ratings
             if (rating >= 4.0) ratingColor = '#00a000'; // green for high ratings
             else if (rating >= 3.0) ratingColor = '#ff9900'; // orange for medium ratings
-            
+
             const difficulty = parseFloat(professorData.difficulty);
             let difficultyColor = '#00a000'; // green for easy
             if (difficulty >= 4.0) difficultyColor = '#cc0000'; // red for hard
             else if (difficulty >= 3.0) difficultyColor = '#ff9900'; // orange for medium
-            
+
             // Create the rating display
             ratingElement.innerHTML = `
                 <div style="margin: 4px 0; font-size: 12px; line-height: 1.3;">
@@ -600,13 +600,13 @@
                     <span style="color: ${difficultyColor}; font-weight: bold;">${professorData.difficulty}/5</span>
                 </div>
             `;
-            
+
             const instructorElement = sectionElement.querySelector('.one-instructor');
             if (instructorElement) {
                 // Insert right after the professor name container
                 instructorElement.parentNode.insertBefore(ratingElement, instructorElement.nextSibling);
             }
-            
+
             // Optional: Also log to console when displaying (for debugging)
             console.log(`Displayed RMP rating for ${professorData.name}: ${professorData.rating}/5, Difficulty: ${professorData.difficulty}/5`);
         } else if (professorData.error) {
@@ -618,12 +618,12 @@
                     RMP: Not found
                 </div>
             `;
-            
+
             const instructorElement = sectionElement.querySelector('.one-instructor');
             if (instructorElement) {
                 instructorElement.parentNode.insertBefore(ratingElement, instructorElement.nextSibling);
             }
-            
+
             console.log(`No RMP data found for professor: ${professorData.error}`);
         }
     }
@@ -638,18 +638,18 @@
     function handleSearch() {
         document.addEventListener('click', (event) => {
             const button = event.target.closest('cse-course-list-item button');
-            
+
             if (button) {
                 setTimeout(() => {
                     const pane = document.querySelector('cse-pane#details');
-                    
+
                     if (!pane || pane.offsetParent === null) return;
 
                     const toolbarSpans = pane.querySelectorAll('mat-toolbar span');
                     const courseNameSpan = Array.from(toolbarSpans)
-                    .filter(span => span.innerText.trim() && !span.classList.length)
-                    .pop();
-                    
+                        .filter(span => span.innerText.trim() && !span.classList.length)
+                        .pop();
+
                     const courseName = courseNameSpan ? courseNameSpan.innerText.trim() : "unknown course";
                     return courseName;
                 }, 50);
@@ -676,7 +676,7 @@
 
         // check what page we're on (not including parameters)
         const path = window.location.href.split("?")[0];
-        
+
         switch (true) {
             case path.endsWith("/scheduler"):
                 handleScheduler();

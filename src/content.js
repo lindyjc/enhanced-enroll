@@ -12,10 +12,9 @@ handlerScript.src = chrome.runtime.getURL('madgrades/madgrades_handler.js');
 handlerScript.type = 'module';
 (document.head || document.documentElement).appendChild(handlerScript);
 
-const searchScript = document.createElement('script');
-searchScript.src = chrome.runtime.getURL('cs&eScraper.js');
-searchScript.type = 'module';
-(document.head || document.documentElement).appendChild(searchScript);
+const cseScript = document.createElement('script');
+cseScript.src = chrome.runtime.getURL('cseScraper.js'); // Ensure this matches the manifest path
+(document.head || document.documentElement).appendChild(cseScript);
 
 let rendererScriptInjected = false;
 
@@ -213,4 +212,43 @@ if (document.readyState === 'loading') {
     injectStyles();
 }
 
+function mainContentExecution() {
+    const path = window.location.href.split("?")[0];
 
+    // Wait until the cs&e.js script is loaded before trying to call its functions.
+    // This is the simplest way to ensure the functions are on the window object.
+    cseScript.onload = () => {
+        switch (true) {
+            case path.endsWith("/scheduler"):
+                // 💡 Call the globally exposed function
+                if (window.handleScheduler) {
+                    window.handleScheduler();
+                }
+                break;
+            case path.endsWith("/search"):
+                // 💡 Call the globally exposed function
+                if (window.handleSectionsButton) {
+                    window.handleSectionsButton();
+                }
+                break;
+        }
+    };
+
+    // Ensure styles are injected after the page is loaded (keep existing injectStyles call)
+    injectStyles();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mainContentExecution);
+} else {
+    mainContentExecution();
+}
+
+function injectStyles() {
+    // Styling for injected elements
+    const styleLink = document.createElement("link")
+    styleLink.rel = "stylesheet"
+    styleLink.href = chrome.runtime.getURL("injected.css")
+    document.head.appendChild(styleLink)
+    console.log("Styling applied!")
+}
