@@ -11,6 +11,9 @@
         "storage",
         "scripting"
     ],
+    "host_permissions": [
+        "https://api.madgrades.com/v1/*"
+    ],
     "content_scripts": [
         {
             "matches": [
@@ -28,7 +31,8 @@
                 "injected.css",
                 "node_modules/plotly.js-dist/plotly.js",
                 "madgrades/config.js",
-                "madgrades/madgrades_handler.js"
+                "madgrades/madgrades_handler.js",
+                "render_plot.js"
             ],
             "matches": [
                 "https://enroll.wisc.edu/*"

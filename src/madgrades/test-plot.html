@@ -27,7 +27,7 @@
         async function displayGraph() {
             const abbrev = "COMP SCI" // get these from somewhere in the future
             const number = "577"
-            const courseurl = await getCourseUrl(abbrev, number)
+            const courseurl = await getCourseUrl("COMP SCI 577")
             const grade_counts = await getGradeCounts(courseurl)
             const grade_per = await getGradePercents(courseurl)
             const avgGPA = await getAvgGPA(courseurl)

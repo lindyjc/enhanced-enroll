@@ -39,6 +39,7 @@ export async function getCourseUrl(abbrev, number) {
     // console.log(json);
     // console.log(json.results[0].subjects);
     // console.log(json.subjects)
+    
     return json.results?.[0]?.url;
 }
 
