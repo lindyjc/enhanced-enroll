@@ -14,14 +14,29 @@
     "content_scripts": [
         {
             "matches": [
-                "https://enroll.wisc.edu/search"
+                "https://enroll.wisc.edu/*"
             ],
             "js": [
                 "content.js"
+            ],
+            "type": "module"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "injected.css",
+                "node_modules/plotly.js-dist/plotly.js",
+                "madgrades/config.js",
+                "madgrades/madgrades_handler.js"
+            ],
+            "matches": [
+                "https://enroll.wisc.edu/*"
             ]
         }
     ],
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     }
 }

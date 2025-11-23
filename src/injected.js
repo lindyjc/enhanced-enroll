@@ -1,4 +1,7 @@
 // TODO: Returns catalog course number
+console.log("reaching injected.js")
+const { displayGraph } = await import(chrome.runtime.getURL("madgrades/madgrades_handler.js"));
+console.log("displayGraph loaded:", displayGraph);
 
 // Insert plot into html page 
 const observer = new MutationObserver(() => {
@@ -7,6 +10,7 @@ const observer = new MutationObserver(() => {
     if (btn) {
         currentCourse(btn);
     }
+    console.log("See sections is here")
 })
 observer.observe(document.body, { childList: true, subtree: true })
 
@@ -14,7 +18,7 @@ const currentCourse = (seeSectionsBtn) => {
     if (!seeSectionsBtn) {
         return
     }
-
+    console.log("trying to create button")
     // Create button for displaying MadGrades plot in popup 
     const plotBtn = document.createElement("button")
     plotBtn.textContent = "Show MadGrades Plot"
@@ -34,6 +38,7 @@ const currentCourse = (seeSectionsBtn) => {
         popup.style.display = "block"
 
         // TODO: Call Madgrades func (course catalog num) -> returns plot
+        displayGraph("COMP SCI", "564")
     })
 
     // Button to close popup 
