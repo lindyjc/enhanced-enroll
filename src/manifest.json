@@ -33,11 +33,7 @@
                 "madgrades/config.js",
                 "madgrades/madgrades_handler.js",
                 "render_plot.js",
-<<<<<<< HEAD
                 "cseScraper.js"
-=======
-                "cs&eScraper.js"
->>>>>>> ae5ae48de149503f3cd49fdb93d449543b1416b8
             ],
             "matches": [
                 "https://enroll.wisc.edu/*"
