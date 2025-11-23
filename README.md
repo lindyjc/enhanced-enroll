@@ -2,6 +2,7 @@
 ## Inspiration
 We wanted to create a tool that puts everything students need right where they need it—making enrollment smoother, more intuitive, and more accessible for thousands of our peers. Not by replacing the existing system, but by enhancing it. 
 
+<<<<<<< HEAD
 ## What it does
 - Integrates Rate My Professor and Madgrades data seamlessly into course search results. Students can view instructor ratings, grade distributions, and past difficulty without leaving the page.
 - Adds a real-time schedule compatibility checker: if a class section conflicts with a course already in your schedule, the extension automatically highlights it in red.
@@ -25,5 +26,4 @@ We wanted to create a tool that puts everything students need right where they n
 ## What's next for ENHANCED ENROLL
 - A mobile companion version or Safari/Firefox ports
 - Implement a search filter for dates/times of classes
-
 
