@@ -1,8 +1,7 @@
 # madhacks-25
 ## Inspiration
-We wanted to create a tool that puts everything students need right where they need it—making enrollment smoother, more intuitive, and more accessible for thousands of our peers. Not by replacing the existing system, but by enhancing it. 
+We set out to build the enrollment experience we genuinely wish we had ourselves: a unified, thoughtful, and modern layer on top of the existing platform that makes scheduling easier for everyone on campus.
 
-<<<<<<< HEAD
 ## What it does
 - Integrates Rate My Professor and Madgrades data seamlessly into course search results. Students can view instructor ratings, grade distributions, and past difficulty without leaving the page.
 - Adds a real-time schedule compatibility checker: if a class section conflicts with a course already in your schedule, the extension automatically highlights it in red.
