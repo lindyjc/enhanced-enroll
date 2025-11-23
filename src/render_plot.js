@@ -3,14 +3,31 @@ function renderPlot(plotData) {
         if (typeof Plotly !== 'undefined' && Plotly.newPlot) {
             console.log("Plotly found. Rendering graph from event data.");
 
+            const plotDivId = 'madgrades-plot';
+            const plotDiv = document.getElementById(plotDivId);
+
+            // CRITICAL FIX: Clear the existing graph content before rendering a new one
+            if (plotDiv) {
+                Plotly.purge(plotDivId); // Cleanly removes the Plotly structure and listeners
+                plotDiv.innerHTML = ''; // Ensure the DIV is empty
+            }
+
             const letter_grades = ['A', 'AB', 'B', 'BC', 'C', 'D', 'F'];
             const x_lab = 'Cumulative: ' + plotData.avgGPA;
             // const r = 0; const g = 0; const b = 0; const color = `rgb(${r},${g},${b})`;
             const color = "#C5050C"
 
             var layout = {
+                // title: {
+                //     text: 'My Chart Title', // The actual title text
+                //     font: {
+                //         family: 'Arial, sans-serif', // Font family
+                //         size: 24, // Font size
+                //         color: 'blue' // Font color
+                //     },
+                // },
                 xaxis: {
-                    title: { text: x_lab, font: { family: 'Courier New, monospace', size: 15, color: "black" } },
+                    title: { text: x_lab, font: { family: 'Roboto, Helvetica Neue, Helvetica, Arial, sans-serif;', size: 15, color: "black" } },
                 },
                 yaxis: { title: { text: "Students (%)" }, range: [0, 100] }
             };
@@ -20,20 +37,29 @@ function renderPlot(plotData) {
                 y: plotData.grade_per,
                 type: 'bar',
                 marker: { color: color },
-                text: plotData.grade_per.map(String),
+                // text: plotData.grade_per.map(String),
+                text: plotData.grade_per.map(p => `${p}%`),
                 hovertemplate: '%{customdata}<extra></extra>',
                 customdata: plotData.grade_counts.map((count, i) => `${count} students`)
             };
             var data = [trace1];
 
-            // Plotly.newPlot('madgrades-plot', data, layout);
-            const plotDivId = 'madgrades-plot';
+            setTimeout(() => {
+                Plotly.newPlot(plotDivId, data, layout)
+                    .then(() => {
+                        Plotly.relayout(plotDivId, { autosize: true });
+                        console.log("Plotly forced resize/relayout successfully.");
+                    })
+                    .catch(e => {
+                        console.error("Plotly rendering failed on visible container:", e);
+                    });
+            }, 10);
 
-            Plotly.newPlot(plotDivId, data, layout)
-                .then(() => {
-                    Plotly.relayout(plotDivId, { autosize: true });
-                    console.log("Plotly forced resize/relayout successfully.");
-                });
+            // Plotly.newPlot(plotDivId, data, layout)
+            //     .then(() => {
+            //         Plotly.relayout(plotDivId, { autosize: true });
+            //         console.log("Plotly forced resize/relayout successfully.");
+            //     });
 
         } else {
             // wait for plotly

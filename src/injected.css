@@ -10,7 +10,12 @@
 }
 
 #madgrades-popup {
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s linear;
     display: none;
+
     position: fixed;
     z-index: 9999;
     left: 0;
@@ -19,6 +24,11 @@
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.6);
+}
+
+#madgrades-popup.visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 #madgrades-popup>div {
@@ -57,7 +67,7 @@
 }
 
 .madgrades-btn {
-    background-color: #C5050C; 
+    background-color: #C5050C;
     color: white;
     border: none;
     padding: 8px 12px;
@@ -74,4 +84,38 @@
 
 .madgrades-btn:hover {
     background-color: #a3040b;
+}
+
+
+/* Styling for the spinner container */
+#madgrades-spinner {
+    display: none;
+    /* Starts hidden */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #C5050C;
+    /* Wisconsin Red */
+    animation: spin 1s linear infinite;
+    z-index: 100;
+    /* Ensure it's above the plot area */
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+#madgrades-popup.loading #madgrades-plot {
+    opacity: 0.2;
+}
+
+#madgrades-popup.loading #madgrades-spinner {
+    display: block;
 }

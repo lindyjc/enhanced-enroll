@@ -64,7 +64,6 @@ export async function getCourseUrl(course) {
     return json.results?.[0]?.url;
 }
 
-
 /**
  * Get the cumulative frequencies of each letter grade for this specific course. 
  * @param {*} url the course url that identifies this course.
@@ -96,13 +95,22 @@ export async function getGradePercents(url) {
     const g = grades?.cumulative;
     const total = await getTotalStudents(url)
     // total = g.aCount + g.abCount + g.bCount + g.bcCount + g.cCount + g.dCount + g.fCount
-    return [(g.aCount / total * 100).toFixed(2) + "%",
-    (g.abCount / total * 100).toFixed(2) + "%",
-    (g.bCount / total * 100).toFixed(2) + "%",
-    (g.bcCount / total * 100).toFixed(2) + "%",
-    (g.cCount / total * 100).toFixed(2) + "%",
-    (g.dCount / total * 100).toFixed(2) + "%",
-    (g.fCount / total * 100).toFixed(2) + "%",]
+    // return [(g.aCount / total * 100).toFixed(2) + "%",
+    // (g.abCount / total * 100).toFixed(2) + "%",
+    // (g.bCount / total * 100).toFixed(2) + "%",
+    // (g.bcCount / total * 100).toFixed(2) + "%",
+    // (g.cCount / total * 100).toFixed(2) + "%",
+    // (g.dCount / total * 100).toFixed(2) + "%",
+    // (g.fCount / total * 100).toFixed(2) + "%",]
+    return [
+    Number((g.aCount / total * 100).toFixed(2)), 
+    Number((g.abCount / total * 100).toFixed(2)), 
+    Number((g.bCount / total * 100).toFixed(2)), 
+    Number((g.bcCount / total * 100).toFixed(2)), 
+    Number((g.cCount / total * 100).toFixed(2)), 
+    Number((g.dCount / total * 100).toFixed(2)), 
+    Number((g.fCount / total * 100).toFixed(2)),
+];
 }
 
 /**
