@@ -1,4 +1,4 @@
-# Enhanced Enroll: A UW-Madison Course Search & Enroll extension
+# Enhanced Enroll: A UW-Madison CS&Enroll Extension
 ## Inspiration
 We set out to build the enrollment experience we genuinely wish we had ourselves: a unified, thoughtful, and modern layer on top of the existing platform that makes scheduling easier for everyone on campus.
 
