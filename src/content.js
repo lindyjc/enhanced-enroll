@@ -12,6 +12,10 @@ handlerScript.src = chrome.runtime.getURL('madgrades/madgrades_handler.js');
 handlerScript.type = 'module';
 (document.head || document.documentElement).appendChild(handlerScript);
 
+const cseScript = document.createElement('script');
+cseScript.src = chrome.runtime.getURL('cseScraper.js'); // Ensure this matches the manifest path
+(document.head || document.documentElement).appendChild(cseScript);
+
 let rendererScriptInjected = false;
 
 function dispatchPlotEvent(data) {
@@ -20,7 +24,7 @@ function dispatchPlotEvent(data) {
             plotData: JSON.stringify(data)
         }
     });
-    
+
     window.dispatchEvent(event);
 }
 
@@ -30,9 +34,9 @@ function createPlot(data) {
         script.src = chrome.runtime.getURL('render_plot.js');
         (document.head || document.documentElement).appendChild(script);
         rendererScriptInjected = true;
-        
+
         script.onload = () => {
-             dispatchPlotEvent(data);
+            dispatchPlotEvent(data);
         };
         script.onerror = (e) => console.error("Failed to load renderplot.js", e);
     } else {
@@ -79,7 +83,7 @@ const currentCourse = (seeSectionsBtn) => {
     // Create popup container 
     const popup = document.createElement("div")
     popup.id = "madgrades-popup"
-    
+
     const modalContent = document.createElement("div");
     modalContent.className = "madgrades-modal-content";
 
@@ -123,6 +127,38 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', injectStyles);
 } else {
     injectStyles();
+}
+
+function mainContentExecution() {
+    const path = window.location.href.split("?")[0];
+
+    // Wait until the cs&e.js script is loaded before trying to call its functions.
+    // This is the simplest way to ensure the functions are on the window object.
+    cseScript.onload = () => {
+        switch (true) {
+            case path.endsWith("/scheduler"):
+                // 💡 Call the globally exposed function
+                if (window.handleScheduler) {
+                    window.handleScheduler();
+                }
+                break;
+            case path.endsWith("/search"):
+                // 💡 Call the globally exposed function
+                if (window.handleSectionsButton) {
+                    window.handleSectionsButton();
+                }
+                break;
+        }
+    };
+
+    // Ensure styles are injected after the page is loaded (keep existing injectStyles call)
+    injectStyles();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mainContentExecution);
+} else {
+    mainContentExecution();
 }
 
 function injectStyles() {

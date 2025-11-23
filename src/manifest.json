@@ -32,7 +32,8 @@
                 "node_modules/plotly.js-dist/plotly.js",
                 "madgrades/config.js",
                 "madgrades/madgrades_handler.js",
-                "render_plot.js"
+                "render_plot.js",
+                "cseScraper.js"
             ],
             "matches": [
                 "https://enroll.wisc.edu/*"
