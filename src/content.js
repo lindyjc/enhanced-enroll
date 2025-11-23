@@ -23,6 +23,56 @@ cseScript.src = chrome.runtime.getURL('cseScraper.js');
 
 let rendererScriptInjected = false;
 
+// Declare variables globally
+let popup;
+let closeBtn;
+
+// --- Function to create the persistent modal structure (new) ---
+function createMadgradesPopup() {
+    // Check if the popup already exists in the DOM to prevent duplicates
+    if (document.getElementById('madgrades-popup')) {
+        popup = document.getElementById('madgrades-popup');
+        return;
+    }
+
+    popup = document.createElement("div");
+    popup.id = "madgrades-popup";
+    popup.style.display = "none"; // Ensure it starts hidden
+
+    const modalContent = document.createElement("div");
+    modalContent.className = "madgrades-modal-content";
+
+    const spinnerDiv = document.createElement("div");
+    spinnerDiv.id = "madgrades-spinner";
+    modalContent.appendChild(spinnerDiv); // Add it to the modal content
+
+    const avgGradesPlotDiv = document.createElement("div")
+    avgGradesPlotDiv.id = "madgrades-plot"
+    modalContent.appendChild(avgGradesPlotDiv)
+
+    closeBtn = document.createElement("button");
+    closeBtn.textContent = "Close";
+    closeBtn.id = "close-btn";
+    modalContent.appendChild(closeBtn);
+
+    popup.appendChild(modalContent);
+    document.body.appendChild(popup);
+
+    closeBtn.addEventListener("click", () => {
+        document.getElementById('madgrades-popup').classList.remove('visible');
+        popup.style.display = "none";
+        // Also ensure the graph is cleared when closed for the next render
+        if (window.Plotly && window.Plotly.purge) {
+            window.Plotly.purge('madgrades-plot');
+        } else {
+            document.getElementById('madgrades-plot').innerHTML = '';
+        }
+    });
+
+    console.log("MadGrades Popup structure created once.");
+}
+// --- End of new function ---
+
 function dispatchPlotEvent(data) {
     const event = new CustomEvent('RenderMadgradesPlot', {
         detail: {
@@ -43,7 +93,7 @@ function createPlot(data) {
         script.onload = () => {
             dispatchPlotEvent(data);
         };
-        script.onerror = (e) => console.error("Failed to load renderplot.js", e);
+        script.onerror = (e) => console.log("Failed to load renderplot.js", e);
     } else {
         dispatchPlotEvent(data);
     }
@@ -65,6 +115,16 @@ const observer = new MutationObserver(() => {
 })
 observer.observe(document.body, { childList: true, subtree: true })
 
+function injectStyles() {
+    // Styling for injected elements
+    const styleLink = document.createElement("link")
+    styleLink.rel = "stylesheet"
+    styleLink.href = chrome.runtime.getURL("injected.css")
+    document.head.appendChild(styleLink)
+    createMadgradesPopup();
+    console.log("Styling applied!")
+}
+
 const getCourseNameFromDOM = () => {
     const pane = document.querySelector('cse-pane#details');
 
@@ -83,11 +143,19 @@ const currentCourse = (seeSectionsBtn) => {
     if (!seeSectionsBtn) {
         return
     }
+
+    // We rely on 'popup' being a global variable created by createMadgradesPopup()
+    if (!popup) {
+        console.error("Popup not initialized. Re-running startup logic.");
+        createMadgradesPopup();
+    }
+
     console.log("trying to create button")
     const plotBtn = document.createElement("button")
     plotBtn.textContent = "Show MadGrades"
     plotBtn.className = "madgrades-btn"
     seeSectionsBtn.insertAdjacentElement("afterend", plotBtn)
+
 
     const popup = document.createElement("div")
     popup.id = "madgrades-popup"
@@ -107,8 +175,12 @@ const currentCourse = (seeSectionsBtn) => {
     popup.appendChild(modalContent);
     document.body.appendChild(popup);
 
+
     plotBtn.addEventListener("click", () => {
-        popup.style.display = "block"
+        const popup = document.getElementById('madgrades-popup');
+        popup.classList.add('visible');
+        popup.style.display = "block" // Show the one, persistent popup
+        popup.classList.add('loading'); // for buffer
 
         const courseQuery = getCourseNameFromDOM();
         if (!courseQuery) {
@@ -118,9 +190,9 @@ const currentCourse = (seeSectionsBtn) => {
         chrome.runtime.sendMessage(
             { action: "displayGraph", payload: courseQuery },
             function (response) {
+                popup.classList.remove('loading');
                 if (response && response.status === "success") {
                     console.log("bg executed !")
-                    console.log(response)
                     createPlot(response.data);
                 }
                 else {
@@ -130,10 +202,34 @@ const currentCourse = (seeSectionsBtn) => {
         )
     });
 
+
     closeBtn.addEventListener("click", () => {
         popup.style.display = "none"
     })
+
 }
+// plotBtn.addEventListener("click", () => {
+//     popup.style.display = "block"
+
+//     chrome.runtime.sendMessage(
+//         { action: "displayGraph", payload: "COMP SCI 564" },
+//         function (response) {
+//             if (response && response.status === "success") {
+//                 console.log("bg executed !")
+//                 console.log(response)
+//                 createPlot(response.data);
+//             }
+//             else {
+//                 console.log("error executing bg")
+//             }
+//         }
+//     )
+// });
+
+// closeBtn.addEventListener("click", () => {
+//     popup.style.display = "none"
+// })
+
 
 function mainContentExecution() {
     // 🚨 We no longer need to call window.handleScheduler or window.handleSectionsButton
