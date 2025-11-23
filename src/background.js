@@ -14,6 +14,35 @@ function startUp() {
     })
 }
 
+/*
+    Name: Handle Search
+    Description:
+        This function runs on the Search page of CS&E.
+        It tracks clicks on course items and logs the course name
+        from the details pane that appears when a course is selected.
+    */
+function handleSearch() {
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('cse-course-list-item button');
+
+        if (button) {
+            setTimeout(() => {
+                const pane = document.querySelector('cse-pane#details');
+
+                if (!pane || pane.offsetParent === null) return;
+
+                const toolbarSpans = pane.querySelectorAll('mat-toolbar span');
+                const courseNameSpan = Array.from(toolbarSpans)
+                    .filter(span => span.innerText.trim() && !span.classList.length)
+                    .pop();
+
+                const courseName = courseNameSpan ? courseNameSpan.innerText.trim() : "unknown course";
+                return courseName;
+            }, 50);
+        } // end of if
+    });
+} // end of handlesearch
+
 /**
  * TODO
  * @param {string} abbrev course abbreviation (e.g. "COMP SCI")
@@ -139,17 +168,52 @@ export async function getPlotData(course) {
     return { grade_counts, grade_per, avgGPA };
 }
 
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//     if (request.action === 'displayGraph') {
+//         const courseQuery = handleSearch()
+//         getPlotData(courseQuery).then(data => {
+//             // Send the raw data back to the content script
+//             sendResponse({ status: 'success', data: data });
+//         }).catch(error => {
+//             sendResponse({ status: 'error', message: error.toString() });
+//         });
+//         return true; // Keep the message channel open for the async response
+//     }
+// });
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'displayGraph') {
-        getPlotData("COMP SCI 564").then(data => {
-            // Send the raw data back to the content script
+        
+        const courseQuery = request.payload;
+        
+        if (!courseQuery || typeof courseQuery !== 'string') {
+            sendResponse({ status: 'error', message: 'Missing or invalid course query payload.' });
+            return true;
+        }
+
+        getPlotData(courseQuery).then(data => {
             sendResponse({ status: 'success', data: data });
         }).catch(error => {
+            console.error("Error fetching plot data:", error);
             sendResponse({ status: 'error', message: error.toString() });
         });
-        return true; // Keep the message channel open for the async response
+        
+        return true; // Keep the message channel open
     }
 });
+
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//     if (request.action === 'handleSearch') {
+//         const courseQuery = request.payload;
+//         handleSearch().then(data => {
+//             // Send the raw data back to the content script
+//             sendResponse({ status: 'success', data: data });
+//         }).catch(error => {
+//             sendResponse({ status: 'error', message: error.toString() });
+//         });
+//         return true; // Keep the message channel open for the async response
+//     }
+// });
 
 // Ensure the background script always runs 
 chrome.runtime.onStartup.addListener(startUp)
